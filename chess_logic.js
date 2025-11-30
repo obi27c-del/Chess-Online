@@ -156,6 +156,8 @@ class King extends Piece {
         ];
         this._numMoves = 0;
 
+        let castled = false; // should be good enough for now?
+
     }
 }
 
