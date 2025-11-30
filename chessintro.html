@@ -1,220 +1,233 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <style type="text/css">
-            * {
-                padding: 0;
-                margin: 0;
-                box-sizing: border-box;
-            }
+<!doctype html>
+<html lang="en">
 
-            :root {
-                --color-bg: 119, 33, 138;
-                --color-fg: 255, 255, 255;
-                --num-rows: 10;
-                --num-cols: 10;
-            }
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chess Online</title>
+    <style>
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font: bold 1.5rem Arial, sans-serif;
+            width: 100%;
+            border-radius: 5px;
+        }
 
-            body.maincontainer{
-                position: relative;
-            }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, Segoe UI, Roboto, Arial;
+            background: #f6f6f6;
+            position: relative;
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-            div#board {
-                background: black;
-                min-height: 100vh;
-                display: grid;
 
-                grid-template-columns: repeat(var(--num-cols), 1fr);
-                grid-template-rows: repeat(var(--num-rows), 1fr);
-            }
-            div.space{
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                border: 2px outset black;
 
-                background: rgba(var(--color-bg));
-                color: rgba(var(--color-fg));
+        form.options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1rem;
+            background-color: gray;
+            width: min(420px, 40vw);
+            padding: 1rem;
+            border: solid black .3rem;
+            box-sizing: border-box;
+        }
 
-                border-radius: 10px;
-                font-weight: bold;
-                font-size: 2em;
-            }
+        .option.flex {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: .25rem 0;
+        }
 
-            form.options{
-                display: flex;
-                flex-direction: column;
-            
-                background-color: darkslateblue;
-                color: white;
-                position: absolute;
-                
-                border: 5px solid black;
-                border-radius: 20px;
+        label {
+            margin: 0 1rem;
+            font-size: 1.2rem;
+            border: black solid .1rem;
+        }
 
-                top: 50%;
-                left: 50%;
+        button {
+            padding: 10px;
+            font-size: 2em;
+            margin: 10px;
+            border-radius: 10px;
+        }
 
-                transform: translate(-50%, -50%);
-            }
-            button {
-                padding: 10px;
-                font-size: 2em;
-                margin: 10px;
-            }
-            
-            div.option{
-                padding: 0.5em;
-                flex-grow:1;
-                font-size: 2em;
-            }
-            div.option > input {
-                font-size: 1em;
-                padding: 5px;
+        div.option {
+            padding: 0.5em;
+            flex-grow: 1;
+            font-size: 2em;
+        }
 
-                border-radius: 10px;
-            }
-            div.option > input[type='number']{
-                width: 5ch;
-                margin-left: auto;
-            }
+        div.option>input {
+            font-size: 1em;
+            padding: 5px;
 
-            div.option.grid {
-                display: grid;
-                grid-template-areas: 
-                    "name number"
-                    "range range";
-            }
-            div.option > input[type='range']{
-                grid-area: range;
-            }
+            border-radius: 10px;
+        }
 
-            div.option.flex{
-                display: flex;
-                justify-content: space-around;
-            }
-            div.option > label {
-                display: flex;
-                justify-content: center;
-                align-items: center;
+        div.option>input[type='number'] {
+            width: 5ch;
+            margin-left: auto;
+        }
 
-                padding: 10px;
-                border: 2px solid black;
-                border-radius: 10px;
+        div.option.grid {
+            display: grid;
+            grid-template-areas:
+                "name number"
+                "range range";
+        }
 
-            }
-            div.option > input[type='radio']{
-                display:none;
-            }
-            div.option > input[type='radio']:checked + label {
-                
-                background: purple;
-                color: white;
-            }
-        </style>
-    </head>
-    <body class="maincontainer">  
-        <div id="board">
+        div.option>input[type='range'] {
+            grid-area: range;
+        }
+
+        div.option.flex {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        div.option>label {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 10px;
+            border: 2px solid black;
+            border-radius: 10px;
+
+        }
+
+        div.option>input[type='radio'] {
+            display: none;
+        }
+
+        div.option>input[type='radio']:checked+label {
+
+            background: #dfe0df;
+            color: black;
+        }
+
+        .board-bg {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            z-index: -1;
+        }
+
+
+        .board {
+            width: min(95vw, 95vh);
+            aspect-ratio: 1/1;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 0px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+
+
+        .tile {
+            width: 100%;
+            height: 100%;
+
+        }
+
+        .tile.light {
+            background: #eeeed2;
+        }
+
+        .tile.dark {
+            background: #8d4d2a;
+        }
+
+
+        main {
+
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-top: 0
+        }
+
+        p.lead {
+            color: #444
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="board-bg">
+        <div id="board" class="board"></div>
+    </div>
+
+    <!-- WHEN WE MAKE OUR 2ND DOC CHANGE ACTION HERE -->
+    <form class="options" action="/chess-online/game">
+
+        <div class="option">
+            <header>Chess Online!</header>
 
         </div>
-        
-        <form class="options" action="/minesweeper/game">
-            
-            <div class="option">
-                <span>Name</span>
-                <input name='name' id="name"/>
-            </div>
-            <div class="option grid">
-                <span>Rows</span>
-                <input id="rows" type="number" value="10" min="3" max="10"/>
-                <input id="rowsrange" name='rows' type="range" value="10" min="3" max="10"/>
-            </div>
-            <div class="option grid">
-                <span>Columns</span>
-                <input id="cols" type="number" value="10" min="3" max="10"/>    
-                <input id="colsrange" name='cols' type="range" value="10" min="3" max="10"/>
-            </div>
-            
-            <div class="option flex">
-                <input name='difficulty' id='easy' type="radio" value="easy"/>
-                <label for="easy">Easy</label>
-                <input name='difficulty' id='med' type="radio" value="med"/>
-                <label for="med">Medium</label>
-                <input name='difficulty' id='hard' type="radio" value="hard"/>
-                <label for="hard">Hard</label>
-            </div>
-            <button id="play" type="submit" disabled="disabled">Play Game!</button>
-        </form>
 
-        <script type="text/javascript">
+        <div class="option flex">
+            <input name='gametype' id='random' type="radio" value="random" />
+            <label for="random">Playing a Random Opponent</label>
+            <input name='gametype' id='friend' type="radio" value="friend" />
+            <label for="friend">Playing a Friend</label>
 
-            let rootElement = null;
-            let board = null;
+        </div>
+        <button id="play" type="submit" disabled="disabled">Play Game!</button>
+    </form>
 
-            function init(){
-                rootElement = document.querySelector(':root'); 
-                board = document.getElementById('board')
 
-                document.getElementById('rows').addEventListener('change', updateDims);
-                document.getElementById('cols').addEventListener('change', updateDims);
-                document.getElementById('rowsrange').addEventListener('input', updateDims);
-                document.getElementById('colsrange').addEventListener('input', updateDims);
+    <script>
 
-                let radios = document.querySelectorAll('input[type="radio"]')
-                for(let radio of radios){
-                    radio.addEventListener('change', updateBoard)
+        (function () {
+            let cols = 8;
+            let rows = 8;
+            let board = document.getElementById('board');
+
+
+            board.innerHTML = '';
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile ' + (((r + c) % 2 === 0) ? 'light' : 'dark');
+                    board.appendChild(tile);
                 }
+            }
+            let radios = document.querySelectorAll("input[name='gametype']");
+            let button = document.getElementById('play');
 
-                updateBoard();
+            function updateButtonState() {
+                button.disabled = !Array.from(radios).some(r => r.checked);
             }
 
-            function updateDims(event){
-                let rowID = ['rows', 'rowsrange']
-                let colID = ['cols', 'colsrange']
-                if( event.target.type == 'range') {
-                    let temp = rowID[0];
-                    rowID[0] = rowID[1];
-                    rowID[1] = temp;
 
-                    temp = colID[0];
-                    colID[0] = colID[1];
-                    colID[1] = temp;
-                }
+            updateButtonState();
+            radios.forEach(r => r.addEventListener('change', updateButtonState));
+        })();
+    </script>
+</body>
 
-                let rows = document.getElementById(rowID[0]).value;
-                let cols = document.getElementById(colID[0]).value;
-
-                document.getElementById(rowID[1]).value = rows;
-                document.getElementById(colID[1]).value = cols
-
-                rootElement.style.setProperty("--num-rows", rows)
-                rootElement.style.setProperty("--num-cols", cols);
-                updateBoard();
-            }
-
-            function updateBoard(){
-                let rootStyle = getComputedStyle(rootElement);
-                let numRows = rootStyle.getPropertyValue('--num-rows')
-                let numCols = rootStyle.getPropertyValue('--num-cols')
-
-                board.innerHTML = '';
-                for( let i = 0; i < numRows*numCols; i++ ){
-                    let div = document.createElement('div');
-                    div.classList.add('space')
-                    board.appendChild(div);
-                }
-
-                let radios = document.querySelectorAll("input[type='radio']:checked")
-                let button = document.getElementById('play')
-                let disabled = true;
-                if( radios.length > 0 ){
-                    disabled = false;
-                }
-                button.disabled = disabled;
-            } 
-
-            window.onload = init;
-        </script>
-    </body>
 </html>
