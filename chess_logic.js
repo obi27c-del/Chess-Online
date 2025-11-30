@@ -198,5 +198,6 @@ class Chessboard {
 
     // gotta make the function "isincheck" https://youtu.be/fJIsqZmQVZQ?t=1693 literally does it for us (link is timestamped)
 
-    module.exports = { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // Makes this a module, allows server to request (I think)
+    
 }
+module.exports = { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // Makes this a module, allows server to request (I think)
