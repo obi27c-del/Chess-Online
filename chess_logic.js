@@ -1,3 +1,5 @@
+const { parse } = require("path");
+
 class Piece {
     _type;
     _directions;
@@ -53,6 +55,7 @@ class Pawn extends Piece {
         }
 
     }
+}
 
 class Bishop extends Piece {
 
@@ -163,9 +166,16 @@ class Chessboard {
     #chessboard;
     #playerColor;
     #allMoves;
-    constructor(playerColor) {
+    #drawCounter;
+    #fullMoveCounter
+    #lastMove;
+    constructor(playerColor, botDifficulty) {
         this.#playerColor = playerColor;
         this.#allMoves = null;
+        this.#drawCounter = 0;
+        this.#fullMoveCounter = 1;
+        this.botDifficulty = botDifficulty;
+        this.#lastMove = null;
         this.#chessboard = [ // LOL theres definitely a better way to do this but it works for now
             [new Rook('b'), new Knight('b'), new Bishop('b'), new Queen('b'), new King('b'), new Bishop('b'), new Knight('b'), new Rook('b')],
             [new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b')],
@@ -176,6 +186,13 @@ class Chessboard {
             [new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w')],
             [new Rook('w'), new Knight('w'), new Bishop('w'), new Queen('w'), new King('w'), new Bishop('w'), new Knight('w'), new Rook('w')]
         ];
+    }
+    get drawCounter() {
+        return this.#drawCounter;
+    }
+
+    set drawCounter(val) {
+        this.#drawCounter = val;
     }
 
     getCurrentBoard() {
@@ -213,125 +230,134 @@ class Chessboard {
         const allMoves = [];
 
         for (let y = 0; y < 8; y++) {
-            const rowMoves = [];
+            const row = [];
+
             for (let x = 0; x < 8; x++) {
                 const piece = this.#chessboard[y][x];
 
                 if (!piece) {
-                    rowMoves.push(null);
+                    row.push(null);
                     continue;
                 }
 
                 const moves = [];
+                const t = piece.type.toLowerCase();
 
-                // Sliding pieces (rook, bishop, queen)
+                // SLIDERS (rook, bishop, queen)
                 if (this.isSlidingPiece(piece)) {
                     for (const dir of piece.directions) {
                         for (let step = 1; step < 8; step++) {
                             const nx = x + dir.x * step;
                             const ny = y + dir.y * step;
-
                             if (!this.inBounds(nx, ny)) break;
 
                             const target = this.#chessboard[ny][nx];
                             if (!target) {
                                 moves.push([nx, ny]);
-                                continue;
                             } else {
-                                if (target.color !== piece.color) {
+                                if (target.color !== piece.color)
                                     moves.push([nx, ny]);
-                                }
                                 break;
-                            }
-                        }
-                    }
-
-                } else {
-                    // Non-sliding: handle pawns, kings, knights (and any others)
-                    const t = piece.type.toLowerCase();
-
-                    if (t === 'p') {
-                        // Pawn handling: forward single, optional double on first move, diagonal captures, en passant
-                        const dir = piece.color === 'w' ? -1 : 1;
-
-                        // forward one
-                        const fx = x;
-                        const fy = y + dir;
-                        if (this.inBounds(fx, fy) && !this.#chessboard[fy][fx]) {
-                            moves.push([fx, fy]);
-
-                            // forward two on first move
-                            const fy2 = y + dir * 2;
-                            if (piece.numMoves === 0 && this.inBounds(fx, fy2) && !this.#chessboard[fy2][fx]) {
-                                moves.push([fx, fy2]);
-                            }
-                        }
-
-                        // captures / en passant
-                        for (const dx of [-1, 1]) {
-                            const cx = x + dx;
-                            const cy = y + dir;
-                            if (!this.inBounds(cx, cy)) continue;
-
-                            const target = this.#chessboard[cy][cx];
-                            if (target && target.color !== piece.color) {
-                                // normal capture
-                                moves.push([cx, cy]);
-                            } else {
-                                // empty square: maybe en passant
-                                if (this.canEnPassant(x, y, cx, cy)) {
-                                    moves.push([cx, cy]);
-                                }
-                            }
-                        }
-
-                    } else if (t === 'k') {
-                        // King: single-step moves + castling if available
-                        for (const dir of piece.directions) {
-                            const nx = x + dir.x;
-                            const ny = y + dir.y;
-                            if (!this.inBounds(nx, ny)) continue;
-                            const target = this.#chessboard[ny][nx];
-                            if (!target || target.color !== piece.color) {
-                                moves.push([nx, ny]);
-                            }
-                        }
-
-                        // Castling: if canCastle(...) returns true, add king destination square
-                        if (piece.numMoves === 0) {
-                            if (this.canCastle(piece.color, 'short')) {
-                                // kingside: king moves two to the right
-                                moves.push([x + 2, y]);
-                            }
-                            if (this.canCastle(piece.color, 'long')) {
-                                // queenside: king moves two to the left
-                                moves.push([x - 2, y]);
-                            }
-                        }
-
-                    } else {
-                        // other non-sliding pieces (knight etc.) use single-step directions
-                        for (const dir of piece.directions) {
-                            const nx = x + dir.x;
-                            const ny = y + dir.y;
-
-                            if (!this.inBounds(nx, ny)) continue;
-
-                            const target = this.#chessboard[ny][nx];
-                            if (!target || target.color !== piece.color) {
-                                moves.push([nx, ny]);
                             }
                         }
                     }
                 }
 
-                rowMoves.push(moves);
+                // PAWNS
+                else if (t === 'p') {
+                    const direction = piece.color === 'w' ? -1 : 1;
+
+                    // Forward one
+                    if (this.inBounds(x, y + direction) &&
+                        !this.#chessboard[y + direction][x]) {
+                        moves.push([x, y + direction]);
+
+                        // Forward two
+                        if (piece.numMoves === 0 &&
+                            !this.#chessboard[y + direction * 2][x]) {
+                            moves.push([x, y + direction * 2]);
+                        }
+                    }
+
+                    // Captures + en passant
+                    for (const dx of [-1, 1]) {
+                        const cx = x + dx;
+                        const cy = y + direction;
+
+                        if (!this.inBounds(cx, cy)) continue;
+
+                        const target = this.#chessboard[cy][cx];
+
+                        if (target && target.color !== piece.color) {
+                            moves.push([cx, cy]);
+                        } else {
+                            // en passant
+                            if (this.canEnPassant(x, y, cx, cy)) {
+                                moves.push([cx, cy]);
+                            }
+                        }
+                    }
+                }
+
+                // KING (with safety filtering)
+                else if (t === 'k') {
+                    for (const dir of piece.directions) {
+                        const nx = x + dir.x;
+                        const ny = y + dir.y;
+
+                        if (!this.inBounds(nx, ny)) continue;
+
+                        const target = this.#chessboard[ny][nx];
+
+                        if (!target || target.color !== piece.color) {
+                            // TEST SAFETY
+                            if (this.isKingMoveSafe(x, y, nx, ny, piece.color))
+                                moves.push([nx, ny]);
+                        }
+                    }
+
+                    // Castling moves (also must be safe)
+                    if (piece.numMoves === 0) {
+                        // SHORT
+                        if (this.canCastle(piece.color, 'short')) {
+                            if (this.isKingMoveSafe(x, y, x + 1, y, piece.color) &&
+                                this.isKingMoveSafe(x, y, x + 2, y, piece.color))
+                                moves.push([x + 2, y]);
+                        }
+                        // LONG
+                        if (this.canCastle(piece.color, 'long')) {
+                            if (this.isKingMoveSafe(x, y, x - 1, y, piece.color) &&
+                                this.isKingMoveSafe(x, y, x - 2, y, piece.color))
+                                moves.push([x - 2, y]);
+                        }
+                    }
+                }
+
+                // KNIGHTS / OTHER PIECES
+                else {
+                    for (const dir of piece.directions) {
+                        const nx = x + dir.x;
+                        const ny = y + dir.y;
+
+                        if (!this.inBounds(nx, ny)) continue;
+
+                        const target = this.#chessboard[ny][nx];
+                        if (!target || target.color !== piece.color) {
+                            moves.push([nx, ny]);
+                        }
+                    }
+                }
+
+                row.push(moves);
             }
-            allMoves.push(rowMoves);
+
+            allMoves.push(row);
         }
+
         this.#allMoves = allMoves;
-        // return allMoves; idk if ill need this later
+        return allMoves;
     }
+
     isinCheck(color) {
         // find king position
         let kingPos = null;
@@ -345,6 +371,8 @@ class Chessboard {
             }
             if (kingPos) break;
         }
+
+
 
         // check all opponent moves to see if any can capture the king
         let opponentColor;
@@ -370,6 +398,26 @@ class Chessboard {
             }
         }
         return false;
+    }
+
+    isKingMoveSafe(fromX, fromY, toX, toY, color) {
+        const piece = this.#chessboard[fromY][fromX];
+        const captured = this.#chessboard[toY][toX];
+
+        // temporary move
+        this.#chessboard[toY][toX] = piece;
+        this.#chessboard[fromY][fromX] = null;
+
+        const allMovesBackup = this.#allMoves;
+        this.getAllMoves();
+        const inCheck = this.isinCheck(color);
+        this.#allMoves = allMovesBackup;
+
+        // undo
+        this.#chessboard[fromY][fromX] = piece;
+        this.#chessboard[toY][toX] = captured;
+
+        return !inCheck;
     }
 
     isinCheckmate(color) {
@@ -409,60 +457,246 @@ class Chessboard {
         return true; // no moves resolve check
     }
     canCastle(color, side) {
-        let y = color === 'w' ? 7 : 0;
-        let king = this.#chessboard[y][4];
-        if (king.numMoves > 0) {
-            return false; // king has moved
-        }
+        const y = color === 'w' ? 7 : 0;
 
-        let rook;
+        const king = this.#chessboard[y][4];
+        if (!king || king.type.toLowerCase() !== 'k' || king.numMoves > 0)
+            return false;
+
+        const rookX = side === 'short' ? 7 : 0;
+        const rook = this.#chessboard[y][rookX];
+        if (!rook || rook.type.toLowerCase() !== 'r' || rook.numMoves > 0)
+            return false;
+
+        // Check squares between king and rook
         if (side === 'short') {
-            rook = this.#chessboard[y][7];
+            // squares 5 and 6
+            if (this.#chessboard[y][5] || this.#chessboard[y][6])
+                return false;
         } else {
-            rook = this.#chessboard[y][0];
-        }
-        if (!rook || rook.type.toLowerCase() !== 'r' || rook.numMoves > 0) {
-            return false; // rook has moved
-        }
-
-        // check if all squares between king and rook are empty
-        let step = side === 'short' ? -1 : 1;
-        for (let x = 5 * step; x !== 0; x += step) {
-            if (this.#chessboard[y][x]) {
-                return false; // square is not empty
-            }
+            // squares 1,2,3
+            if (this.#chessboard[y][1] || this.#chessboard[y][2] || this.#chessboard[y][3])
+                return false;
         }
 
-        return true; // can castle
+        // NO check detection here — that must be handled before calling
+        return true;
     }
 
     canEnPassant(fromX, fromY, toX, toY) {
         const piece = this.#chessboard[fromY][fromX];
+        if (!piece || piece.type.toLowerCase() !== 'p') return false;
+
+        // Must have a recorded last move
+        if (!this.#lastMove) return false;
+
+        let ly = this.#lastMove[1];
+        let ly2 = this.#lastMove[3];
+        let lx = this.#lastMove[0];
+        let lx2 = this.#lastMove[2];
+        let pieceMoved = this.#lastMove[4];
+
+        // Last moved piece must be a pawn
+        if (pieceMoved.type.toLowerCase() !== 'p') return false;
+
+        // It must have been a double-step move
+        if (Math.abs(ly2 - ly) !== 2) return false;
+
+        // The pawn must now be horizontally adjacent to this pawn
+        if (ly2 !== fromY) return false;
+        if (lx2 !== toX) return false;
+
+        // Destination square must be directly behind the pawn
+        const direction = piece.color === 'w' ? -1 : 1;
+        if (toY !== fromY + direction) return false;
+
+        return true;
+    }
+    makeMove(fromX, fromY, toX, toY, isMyTurn = true) {
+        const piece = this.#chessboard[fromY][fromX];
+        this.#lastMove = [fromX, fromY, toX, toY, piece];
+        if (!isMyTurn) {
+            return false; // not player's turn
+        }
+
+        if (!piece) {
+            return false; // no piece at source
+        }
+
+        this.getAllMoves(); // ensure moves are up to date
+        const validMoves = this.#allMoves[fromY][fromX];
+        let move = [toX, toY];
+        let isValid = false;
+        for (let m of validMoves) {
+            if (m[0] === move[0] && m[1] === move[1]) {
+                isValid = true;
+                break;
+            }
+        }
+        if (!isValid) {
+            return false;
+        }
+
+        // Handle special moves: castling, en passant, promotion   
+        const t = piece.type.toLowerCase();
+        if (t === 'k' && Math.abs(toX - fromX) === 2) {
+            // Castling
+            if (toX > fromX) {
+                // kingside
+                this.#chessboard[toY][toX - 1] = this.#chessboard[toY][7];
+                this.#chessboard[toY][7] = null;
+            } else {
+                // queenside
+                this.#chessboard[toY][toX + 1] = this.#chessboard[toY][0];
+                this.#chessboard[toY][0] = null;
+            }
+        } else if (t === 'p' && fromX !== toX && !this.#chessboard[toY][toX]) {
+            // En passant
+            const direction = piece.color === 'w' ? -1 : 1;
+            this.#chessboard[toY - direction][toX] = null;
+        }
+        let target = this.#chessboard[toY][toX];
+        if (target || t === 'p') {
+            this.#drawCounter = 0;
+        } else {
+            this.#drawCounter += 1;
+        }
+
+        this.#chessboard[toY][toX] = piece;
+        this.#chessboard[fromY][fromX] = null;
+        piece.numMoves += 1;
+        this.#fullMoveCounter += piece.color === 'b' ? 1 : 0;
+        this.#allMoves = this.getAllMoves();
+        this.getAllMoves();
+        return true;
+    }
+
+
+    promotePawn(x, y, newType) {
+        const piece = this.#chessboard[y][x];
         if (!piece || piece.type.toLowerCase() !== 'p') {
             return false; // not a pawn
         }
-
-        const direction = piece.color === 'w' ? -1 : 1;
-        if (toY !== fromY + direction || Math.abs(toX - fromX) !== 1) {
-            return false; // not a valid en passant move
+        if (piece.color === 'w') {
+            newType = newType.toUpperCase();
         }
-
-
-        const targetPawn = this.#chessboard[fromY][toX];
-        if (!targetPawn || targetPawn.type.toLowerCase() !== 'p' || targetPawn.color === piece.color) {
-            return false; // no opponent pawn to capture
+        else {
+            newType = newType.toLowerCase();
         }
-
-        if (targetPawn.numMoves !== 1) {
-            return false; // target pawn has not just moved
+        if (newType === 'q') {
+            this.#chessboard[y][x] = new Queen(piece.color);
         }
+        else if (newType === 'r') {
+            this.#chessboard[y][x] = new Rook(piece.color);
+        }
+        else if (newType === 'b') {
+            this.#chessboard[y][x] = new Bishop(piece.color);
+        }
+        else if (newType === 'n') {
+            this.#chessboard[y][x] = new Knight(piece.color);
+        }
+        else {
+            return false; // invalid promotion type
+        }
+        // ... other methods like makeMove, promotePawn, findStockFishMove(difficulty)
 
-        return true; // can perform en passant
     }
 
-    // ... other methods like makeMove, promotePawn, findStockFishMove(difficulty)
+    getFENnotation() {
+        // Side to move is always opponent of player color
+        const botColor = this.#playerColor === 'w' ? 'b' : 'w';
 
+        let fen = '';
 
+        // Piece placement
+        for (let y = 0; y < 8; y++) {
+            let empty = 0;
+            for (let x = 0; x < 8; x++) {
+                const piece = this.#chessboard[y][x];
+                if (!piece) {
+                    empty++;
+                } else {
+                    if (empty > 0) {
+                        fen += empty;
+                        empty = 0;
+                    }
+                    fen += piece.type;
+                }
+            }
+            if (empty > 0) fen += empty;
+            if (y < 7) fen += '/';
+        }
 
+        // Castling rights
+        let castles = '';
+        if (this.canCastle('w', 'short')) castles += 'K';
+        if (this.canCastle('w', 'long')) castles += 'Q';
+        if (this.canCastle('b', 'short')) castles += 'k';
+        if (this.canCastle('b', 'long')) castles += 'q';
+        if (castles === '') castles = '-';
+
+        // No en passant target for now — easy to add later
+        fen += ` ${botColor} ${castles} - ${this.#drawCounter} ${this.#fullMoveCounter}`;
+
+        return fen;
+    }
+
+    async makeBotMove() {
+        let depth;
+
+        if (this.botDifficulty === 'easy') {
+            depth = 2;
+        } else if (this.botDifficulty === 'medium') {
+            depth = 5;
+        } else {
+            depth = 10;
+        }
+
+        const fen = this.getFENnotation();
+
+        try {
+            const response = await fetch("https://chess-api.com/v1", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    fen: fen,
+                    depth: depth,
+                    variants: 1
+                })
+            });
+
+            const data = await response.json();
+
+            if (!data.fromNumeric || !data.toNumeric) {
+                console.error("Bot move missing fromNumeric/toNumeric:", data);
+                return false;
+            }
+
+            // convert to integers
+            const fromNum = parseInt(data.fromNumeric, 10);
+            const toNum = parseInt(data.toNumeric, 10);
+
+            // Convert 1–64 to board coordinates (0–7)
+            const fromX = (fromNum - 1) % 8;
+            const fromY = Math.floor((fromNum - 1) / 8);
+
+            const toX = (toNum - 1) % 8;
+            const toY = Math.floor((toNum - 1) / 8);
+            // DEBUG
+            console.log("Bot move:", { fromX, fromY, toX, toY });
+
+            this.makeMove(fromX, fromY, toX, toY);
+            this.getAllMoves(); // update moves after bot move
+            return true;
+
+        } catch (err) {
+            console.error("Stockfish API error:", err);
+            return false;
+        }
+    }
 }
-export { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // ESM version
+
+
+
+module.exports = { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // Makes this a module, allows server to request (I think)
+module.exports = { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // Makes this a module, allows server to request (I think)
