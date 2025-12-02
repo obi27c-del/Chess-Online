@@ -1,1 +1,186 @@
+<!doctype html>
+<html lang="en">
 
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chess Online-Game</title>
+    <style>
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font: bold 1.5rem Arial, sans-serif;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, Segoe UI, Roboto, Arial;
+            background: #f6f6f6;
+            position: relative;
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        form.options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            background-color: gray;
+            width: min(420px, 40vw);
+            padding: 1rem;
+            border: solid black .3rem;
+            box-sizing: border-box;
+        }
+
+        .option.flex {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+            padding: .25rem 0;
+        }
+
+        label {
+            margin: 0 1rem;
+            font-size: 1.2rem;
+            border: black solid .1rem;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 2em;
+            margin: 10px;
+            border-radius: 10px;
+        }
+
+        div.option {
+            padding: 0.5em;
+            flex-grow: 1;
+            font-size: 1.3em;
+        }
+
+        div.option.flex>label {
+            padding: 10px;
+            border: 2px solid black;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        div.option.flex input[type='radio'] {
+            display: none;
+        }
+
+        div.option.flex input[type='radio']:checked+label {
+            background: #dfe0df;
+        }
+
+        .board-bg {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            z-index: -1;
+        }
+
+        .board {
+            width: min(95vw, 95vh);
+            aspect-ratio: 1/1;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+        }
+
+        .tile.light {
+            background: #eeeed2;
+        }
+
+        .tile.dark {
+            background: #8d4d2a;
+        }
+
+
+        div.option.flex>label {
+            padding: 10px;
+            border: 2px solid black;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 88%;
+        }
+
+
+        input#easy:checked+label {
+            background: lightgreen;
+        }
+
+        input#medium:checked+label {
+            background: orange;
+        }
+
+        input#hard:checked+label {
+            background: lightcoral;
+        }
+
+        input#white:checked+label {
+            background: white;
+            color: black;
+        }
+
+        input#black:checked+label {
+            background: black;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header> 
+        Chess Online Game
+    </header>
+
+    <div class="board-bg">
+        <div id="board" class="board"></div>
+    </div>
+
+    <script> 
+        (function () {
+            let board = document.getElementById('board');
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile ' + (((r + c) % 2 === 0) ? 'light' : 'dark');
+                    board.appendChild(tile);
+                }
+            }
+
+            let radios = document.querySelectorAll("input[type='radio']");
+            let button = document.getElementById('play');
+
+            function updateButtonState() {
+
+                const difficultyChosen = document.querySelector("input[name='difficulty']:checked");
+                const colorChosen = document.querySelector("input[name='color']:checked");
+                button.disabled = !(difficultyChosen && colorChosen);
+            }
+
+            radios.forEach(r => r.addEventListener('change', updateButtonState));
+        })();
+    </script>
+
+</body>
+
+</html>
