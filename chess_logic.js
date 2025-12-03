@@ -1,31 +1,40 @@
 const { parse } = require("path");
 
 class Piece {
-    _type;
-    _directions;
-    _color;
-    _numMoves
+    #type;
+    #directions;
+    #color;
+    #numMoves
 
     constructor(color) {
 
-        this._color = color;
+        this.#color = color;
     }
     get color() {
-        return this._color;
+        return this.#color;
     }
     get type() {
-        return this._type;
+        return this.#type;
     }
     get directions() {
-        return this._directions;
+        return this.#directions;
     }
 
     get numMoves() {
-        return this._numMoves;
+        return this.#numMoves;
+    }
+    set color(val) {
+        this.#color = val;
+    }
+    set type(val) {
+        this.#type = val;
+    }
+    set directions(val) {
+        this.#directions = val;
     }
 
     set numMoves(val) {
-        this._numMoves = val;
+        this.#numMoves = val;
     }
 }
 
@@ -33,23 +42,23 @@ class Pawn extends Piece {
 
     constructor(color) {
         super(color);
-        if (this._color === 'w') {
-            this._type = 'P'; // uppercase for white
+        if (this.color === 'w') {
+            this.type = 'P'; // uppercase for white
         }
         else {
-            this._type = 'p'; // lowercase for black
+            this.type = 'p'; // lowercase for black
         }
-        this._directions = [
+        this.directions = [
             { x: 0, y: 1 } // Pawns move forward only
         ];
-        this._numMoves = 0;
-        if (this._color === 'w') {
-            this._directions = [
+        this.numMoves = 0;
+        if (this.color === 'w') {
+            this.directions = [
                 { x: 0, y: 1 },
             ];
         }
         else {
-            this._directions = [
+            this.directions = [
                 { x: 0, y: -1 },
             ];
         }
@@ -61,13 +70,13 @@ class Bishop extends Piece {
 
     constructor(color) {
         super(color);
-        if (this._color === 'w') {
-            this._type = 'B'; // uppercase for white
+        if (this.color === 'w') {
+            this.type = 'B'; // uppercase for white
         }
         else {
-            this._type = 'b'; // loweercase for black
+            this.type = 'b'; // loweercase for black
         }
-        this._directions = [
+        this.directions = [
             { x: 1, y: 1 },
             { x: 1, y: -1 },
             { x: -1, y: 1 },
@@ -79,13 +88,13 @@ class Knight extends Piece {
 
     constructor(color) {
         super(color);
-        if (this._color === 'w') {
-            this._type = 'N'; // uppercase for white
+        if (this.color === 'w') {
+            this.type = 'N'; // uppercase for white
         }
         else {
-            this._type = 'n'; // lowercase for black
+            this.type = 'n'; // lowercase for black
         }
-        this._directions = [
+        this.directions = [
             { x: 2, y: 1 },
             { x: 2, y: -1 },
             { x: -2, y: 1 },
@@ -102,13 +111,13 @@ class Rook extends Piece {
 
     constructor(color) {
         super(color);
-        if (this._color === 'w') {
-            this._type = 'R'; // uppercase for white
+        if (this.color === 'w') {
+            this.type = 'R'; // uppercase for white
         }
         else {
-            this._type = 'r'; // lowercase for black
+            this.type = 'r'; // lowercase for black
         }
-        this._directions = [
+        this.directions = [
             { x: 1, y: 0 },
             { x: -1, y: 0 },
             { x: 0, y: 1 },
@@ -120,13 +129,13 @@ class Rook extends Piece {
 class Queen extends Piece {
     constructor(color) {
         super(color);
-        if (this._color === 'w') {
-            this._type = 'Q'; // uppercase for white
+        if (this.color === 'w') {
+            this.type = 'Q'; // uppercase for white
         }
         else {
-            this._type = 'q'; // lowercase for black
+            this.type = 'q'; // lowercase for black
         }
-        this._directions = [
+        this.directions = [
             { x: 1, y: 0 },
             { x: -1, y: 0 },
             { x: 0, y: 1 },
@@ -141,13 +150,13 @@ class Queen extends Piece {
 class King extends Piece {
     constructor(color) {
         super(color);
-        if (this._color === 'w') {
-            this._type = 'K'; // uppercase for white
+        if (this.color === 'w') {
+            this.type = 'K'; // uppercase for white
         }
         else {
-            this._type = 'k'; // lowercase for black
+            this.type = 'k'; // lowercase for black
         }
-        this._directions = [
+        this.directions = [
             { x: 1, y: 0 },
             { x: -1, y: 0 },
             { x: 0, y: 1 },
@@ -157,7 +166,7 @@ class King extends Piece {
             { x: -1, y: 1 },
             { x: -1, y: -1 }
         ];
-        this._numMoves = 0;
+        this.numMoves = 0;
 
     }
 }
@@ -165,18 +174,16 @@ class King extends Piece {
 class Chessboard {
     #chessboard;
     #playerColor;
-    #allMoves;
     #drawCounter;
     #fullMoveCounter
     #lastMove;
     constructor(playerColor, botDifficulty) {
         this.#playerColor = playerColor;
-        this.#allMoves = null;
         this.#drawCounter = 0;
         this.#fullMoveCounter = 1;
         this.botDifficulty = botDifficulty;
         this.#lastMove = null;
-        this.#chessboard = [ // LOL theres definitely a better way to do this but it works for now
+        this.#chessboard = [
             [new Rook('b'), new Knight('b'), new Bishop('b'), new Queen('b'), new King('b'), new Bishop('b'), new Knight('b'), new Rook('b')],
             [new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b'), new Pawn('b')],
             [null, null, null, null, null, null, null, null],
@@ -189,6 +196,10 @@ class Chessboard {
     }
     get drawCounter() {
         return this.#drawCounter;
+    }
+
+    get allMoves() {
+        return this.getAllMoves();
     }
 
     set drawCounter(val) {
@@ -207,7 +218,7 @@ class Chessboard {
             .reverse()
             .map(row => row.slice().reverse().map(cell => (cell ? cell.type : null)));
     }
-    // NOW we gotta make html that takes the current board, swaps the letters for images, and displays it nicely
+    
     getPlayerColor() {
         return this.#playerColor;
     }
@@ -226,14 +237,15 @@ class Chessboard {
     // - returns an 8x8 array; each cell is either null (empty tile) or an array of [x,y] destination pairs
     // - sliding pieces (rook, bishop, queen) continue in a direction until blocked
     // - non-sliding pieces add single-step destinations from their directions
-    getAllMoves() {
-        const allMoves = [];
+    // ignoreKingSafety to prevent infinite recursion
+    getAllMoves(ignoreKingSafety = false) {
+        let allMoves = [];
 
         for (let y = 0; y < 8; y++) {
-            const row = [];
+            let row = [];
 
             for (let x = 0; x < 8; x++) {
-                const piece = this.#chessboard[y][x];
+                let piece = this.#chessboard[y][x];
 
                 if (!piece) {
                     row.push(null);
@@ -299,7 +311,7 @@ class Chessboard {
                     }
                 }
 
-                // KING (with safety filtering)
+                // KING
                 else if (t === 'k') {
                     for (const dir of piece.directions) {
                         const nx = x + dir.x;
@@ -310,21 +322,28 @@ class Chessboard {
                         const target = this.#chessboard[ny][nx];
 
                         if (!target || target.color !== piece.color) {
-                            // TEST SAFETY
-                            if (this.isKingMoveSafe(x, y, nx, ny, piece.color))
+                            if (!ignoreKingSafety) {
+                                
+                                if (this.isKingMoveSafe(x, y, nx, ny, piece.color))
+                                    moves.push([nx, ny]);
+                            } else {
+                            
                                 moves.push([nx, ny]);
+                            }
                         }
                     }
 
-                    // Castling moves (also must be safe)
-                    if (piece.numMoves === 0) {
-                        // SHORT
+                    // Castling 
+                    if (!ignoreKingSafety && piece.numMoves === 0) {
+
+                        // Short castle
                         if (this.canCastle(piece.color, 'short')) {
                             if (this.isKingMoveSafe(x, y, x + 1, y, piece.color) &&
                                 this.isKingMoveSafe(x, y, x + 2, y, piece.color))
                                 moves.push([x + 2, y]);
                         }
-                        // LONG
+
+                        // Long castle
                         if (this.canCastle(piece.color, 'long')) {
                             if (this.isKingMoveSafe(x, y, x - 1, y, piece.color) &&
                                 this.isKingMoveSafe(x, y, x - 2, y, piece.color))
@@ -354,7 +373,6 @@ class Chessboard {
             allMoves.push(row);
         }
 
-        this.#allMoves = allMoves;
         return allMoves;
     }
 
@@ -381,7 +399,7 @@ class Chessboard {
         } else {
             opponentColor = 'w';
         }
-        let allMoves = this.#allMoves;
+        let allMoves = this.getAllMoves(true);
         for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 8; x++) {
                 let piece = this.#chessboard[y][x];
@@ -408,14 +426,15 @@ class Chessboard {
         this.#chessboard[toY][toX] = piece;
         this.#chessboard[fromY][fromX] = null;
 
-        const allMovesBackup = this.#allMoves;
-        this.getAllMoves();
+
+        this.getAllMoves(true);
         const inCheck = this.isinCheck(color);
-        this.#allMoves = allMovesBackup;
+
 
         // undo
         this.#chessboard[fromY][fromX] = piece;
         this.#chessboard[toY][toX] = captured;
+        this.getAllMoves(true);
 
         return !inCheck;
     }
@@ -425,7 +444,7 @@ class Chessboard {
             return false;
         }
         // generate all moves for current player and see if any resolve the check
-        let allMoves = this.#allMoves
+        let allMoves = this.getAllMoves();
         for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 8; x++) {
                 let piece = this.#chessboard[y][x];
@@ -523,8 +542,8 @@ class Chessboard {
             return false; // no piece at source
         }
 
-        this.getAllMoves(); // ensure moves are up to date
-        const validMoves = this.#allMoves[fromY][fromX];
+        let allMoves = this.getAllMoves();
+        let validMoves = allMoves[fromY][fromX];
         let move = [toX, toY];
         let isValid = false;
         for (let m of validMoves) {
@@ -566,8 +585,7 @@ class Chessboard {
         this.#chessboard[fromY][fromX] = null;
         piece.numMoves += 1;
         this.#fullMoveCounter += piece.color === 'b' ? 1 : 0;
-        this.#allMoves = this.getAllMoves();
-        this.getAllMoves();
+        this.getAllMoves(); // update moves after the move
         return true;
     }
 
@@ -695,6 +713,7 @@ class Chessboard {
         }
     }
 }
+
 
 
 
