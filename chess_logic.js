@@ -1,5 +1,7 @@
+const { get } = require("http");
 const { parse } = require("path");
 
+// JAKOB BASICALLY IGNORE ALL THE CLASSES THAT ARENT THE Chessboard CLASS YOU NEVER HAVE TO USE THEM OR THEIR METHODS
 class Piece {
     #type;
     #directions;
@@ -177,7 +179,10 @@ class Chessboard {
     #drawCounter;
     #fullMoveCounter
     #lastMove;
-    constructor(playerColor, botDifficulty) {
+
+    // JAKOB for a Vs. Bot game, take the url-encoded information and use it for the constructor | For a Vs. Player game, only use the URL encoded data to set player1 color and then make player2 the opposite color, use client code to make a varible called "isMyTurn" if you are white its set to true at the start of the game if black its set to false, and every time the client sends or receives info the server, the is my turn flips
+    //JAKOB ALSO BTW if i dont put ur name by a method, u basically have no reason to use it
+    constructor(playerColor, botDifficulty = "medium") {
         this.#playerColor = playerColor;
         this.#drawCounter = 0;
         this.#fullMoveCounter = 1;
@@ -193,7 +198,10 @@ class Chessboard {
             [new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w'), new Pawn('w')],
             [new Rook('w'), new Knight('w'), new Bishop('w'), new Queen('w'), new King('w'), new Bishop('w'), new Knight('w'), new Rook('w')]
         ];
+        this.getAllMoves();
     }
+
+
     get drawCounter() {
         return this.#drawCounter;
     }
@@ -206,11 +214,13 @@ class Chessboard {
         this.#drawCounter = val;
     }
 
+    // JAKOB THIS RETURNNS THE BOARD FOR UI GENERATION, it generates from white perspective | how it works is it goes through each row, if a piece is white its uppercase, if black its lowercase, and then queen is = q, rook = r, bishop = b, knight = n (NOT k), pawn = p, king = k. in the client code just return this and then interate through it, and if its null display empty square, else swap the letter for an image
+    // ALSO IMPORTANT NOTE, you have to do board[y][x] bc its a 2D array DONT DO board[x][y]
     getCurrentBoard() {
         // return a new 2D array containing the piece.type for each square or null if empty for UI generation
         return this.#chessboard.map(row => row.map(cell => (cell ? cell.type : null)));
     }
-
+    // JAKOB this is the same thing as getCurrentBoard but flipped for black perspective
     getFlippedBoard() {
         // return a new 2D array containing the piece.type for each square or null if empty for UI generation, flipped for black perspective
         return this.#chessboard
@@ -218,7 +228,7 @@ class Chessboard {
             .reverse()
             .map(row => row.slice().reverse().map(cell => (cell ? cell.type : null)));
     }
-    
+
     getPlayerColor() {
         return this.#playerColor;
     }
@@ -237,7 +247,6 @@ class Chessboard {
     // - returns an 8x8 array; each cell is either null (empty tile) or an array of [x,y] destination pairs
     // - sliding pieces (rook, bishop, queen) continue in a direction until blocked
     // - non-sliding pieces add single-step destinations from their directions
-    // ignoreKingSafety to prevent infinite recursion
     getAllMoves(ignoreKingSafety = false) {
         let allMoves = [];
 
@@ -311,7 +320,7 @@ class Chessboard {
                     }
                 }
 
-                // KING
+                // KING (with safety filtering)
                 else if (t === 'k') {
                     for (const dir of piece.directions) {
                         const nx = x + dir.x;
@@ -323,17 +332,17 @@ class Chessboard {
 
                         if (!target || target.color !== piece.color) {
                             if (!ignoreKingSafety) {
-                                
+                                // only check safety when generating full legal moves
                                 if (this.isKingMoveSafe(x, y, nx, ny, piece.color))
                                     moves.push([nx, ny]);
                             } else {
-                            
+                                // pseudo-legal mode
                                 moves.push([nx, ny]);
                             }
                         }
                     }
 
-                    // Castling 
+                    // Castling (only if we’re generating real moves)
                     if (!ignoreKingSafety && piece.numMoves === 0) {
 
                         // Short castle
@@ -475,6 +484,7 @@ class Chessboard {
         }
         return true; // no moves resolve check
     }
+
     canCastle(color, side) {
         const y = color === 'w' ? 7 : 0;
 
@@ -531,6 +541,10 @@ class Chessboard {
 
         return true;
     }
+    // JAKOB you might have to change some of the client code because basically when you click rn it shows [letter, number] but this takes in [x,y] where x and y are 0-7 integers, so you might have to convert the letter to a number (0-7) and subtract 1 from the number to get y
+    // other then that, if method returns false the move was illegal and if true then the move was legal and it was made
+    // ALSO IMPORTANT: isMyTurn is a boolean that tells if its the players turn, if its false just return false immediately 
+    // AND ALSO ALSO, if you are doing a bot game, fully ignore "isMyTurn" bc the method for moving the bot (makeBotMove) is async, so whenever you run it just make it await chessboard.makeBotMove() and it'll be impossible for client to move twice in a row
     makeMove(fromX, fromY, toX, toY, isMyTurn = true) {
         const piece = this.#chessboard[fromY][fromX];
         this.#lastMove = [fromX, fromY, toX, toY, piece];
@@ -589,7 +603,9 @@ class Chessboard {
         return true;
     }
 
-
+    // JAKOB this method promotes a pawn at (x,y) to newType ('q','r','b','n'), returns false if invalid
+    // and it automically matches the color so dont worry about that, 'newType' can be uppercase or lowercase itll figure it out
+    // every turn you can just check if last rank or first rank is occupied by opposite color pawn, if so prompt the client to choose a type (for now it can be a simple ugly text prompt where they type 'q', 'r', 'b', or 'n') and then call this method with the chosen type
     promotePawn(x, y, newType) {
         const piece = this.#chessboard[y][x];
         if (!piece || piece.type.toLowerCase() !== 'p') {
@@ -659,6 +675,41 @@ class Chessboard {
         return fen;
     }
 
+    isInStalemate(color) {
+        if (this.isinCheck(color)) {
+            return false;
+        }
+        let allMoves = this.getAllMoves();
+
+        let kingPos = null;
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                const piece = this.#chessboard[y][x];
+                if (piece && piece.type.toLowerCase() === 'k' && piece.color === color) {
+                    kingPos = [x, y];
+                    break;
+                }
+            }
+            if (kingPos) break;
+        }
+        if (allMoves[kingPos[1]][kingPos[0]] && allMoves[kingPos[1]][kingPos[0]].length > 0) {
+            return false;
+        }
+        return true;
+    }
+    // JAKOB THIS IS HOW U CHECK IF GAME IS OVER
+    // if game is ongoing return 0, if white checkmated black return 1, if black checkmated white return 2, if stalemate return 3, if draw by 50-move rule return 4 
+    isGameOver() {
+        if (this.isInCheckmate('w')) return 1;
+        if (this.isInCheckmate('b')) return 2;
+        if (this.isInStalemate('w') || this.isInStalemate('b')) return 3;
+        if (this.#drawCounter >= 100) return 4;
+        return 0;
+    }
+
+    // JAKOB this method makes the bot move based on the botDifficulty set in the constructor, it returns true if the bot move was made successfully, false otherwise
+    // ALSO method is async, everytime you call it you have to do "await chessboard.makeBotMove() so that player cant move twice in a row
+    // ALSO IT CONSOLE LOGS THE BOT MOVE FOR DEBUGGING PURPOSES, if u see bot move in console but nothing happens on board, theres a bug
     async makeBotMove() {
         let depth;
 
