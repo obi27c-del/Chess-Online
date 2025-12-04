@@ -1,5 +1,3 @@
-import { get } from "http";
-import { parse } from "path";
 
 // JAKOB BASICALLY IGNORE ALL THE CLASSES THAT ARENT THE Chessboard CLASS YOU NEVER HAVE TO USE THEM OR THEIR METHODS
 class Piece {
@@ -180,8 +178,12 @@ class Chessboard {
     #fullMoveCounter
     #lastMove;
 
-    // JAKOB for a Vs. Bot game, take the url-encoded information and use it for the constructor | For a Vs. Player game, only use the URL encoded data to set player1 color and then make player2 the opposite color, use client code to make a varible called "isMyTurn" if you are white its set to true at the start of the game if black its set to false, and every time the client sends or receives info the server, the is my turn flips
+    /* JAKOB for a Vs. Bot game, take the url-encoded information and use it for the constructor 
+    | For a Vs. Player game, only use the URL encoded data to set player1 color and then make player2 the opposite color, 
+    use client code to make a varible called "isMyTurn" if you are white its set to true at the start of the game if black 
+    its set to false, and every time the client sends or receives info the server, the is my turn flips
     //JAKOB ALSO BTW if i dont put ur name by a method, u basically have no reason to use it
+    */
     constructor(playerColor, botDifficulty = "medium") {
         this.#playerColor = playerColor;
         this.#drawCounter = 0;
@@ -214,8 +216,12 @@ class Chessboard {
         this.#drawCounter = val;
     }
 
-    // JAKOB THIS RETURNNS THE BOARD FOR UI GENERATION, it generates from white perspective | how it works is it goes through each row, if a piece is white its uppercase, if black its lowercase, and then queen is = q, rook = r, bishop = b, knight = n (NOT k), pawn = p, king = k. in the client code just return this and then interate through it, and if its null display empty square, else swap the letter for an image
+    /* JAKOB THIS RETURNNS THE BOARD FOR UI GENERATION, it generates from white perspective 
+    | how it works is it goes through each row, if a piece is white its uppercase, if black its lowercase,
+     and then queen is = q, rook = r, bishop = b, knight = n (NOT k), pawn = p, king = k. in the client code 
+     just return this and then interate through it, and if its null display empty square, else swap the letter for an image
     // ALSO IMPORTANT NOTE, you have to do board[y][x] bc its a 2D array DONT DO board[x][y]
+    */
     getCurrentBoard() {
         // return a new 2D array containing the piece.type for each square or null if empty for UI generation
         return this.#chessboard.map(row => row.map(cell => (cell ? cell.type : null)));
@@ -541,10 +547,15 @@ class Chessboard {
 
         return true;
     }
-    // JAKOB you might have to change some of the client code because basically when you click rn it shows [letter, number] but this takes in [x,y] where x and y are 0-7 integers, so you might have to convert the letter to a number (0-7) and subtract 1 from the number to get y
+    /* JAKOB you might have to change some of the client code because basically when you click rn it shows 
+    [letter, number] but this takes in [x,y] where x and y are 0-7 integers, so you might have to convert the letter 
+    to a number (0-7) and subtract 1 from the number to get y
     // other then that, if method returns false the move was illegal and if true then the move was legal and it was made
     // ALSO IMPORTANT: isMyTurn is a boolean that tells if its the players turn, if its false just return false immediately 
-    // AND ALSO ALSO, if you are doing a bot game, fully ignore "isMyTurn" bc the method for moving the bot (makeBotMove) is async, so whenever you run it just make it await chessboard.makeBotMove() and it'll be impossible for client to move twice in a row
+    // AND ALSO ALSO, if you are doing a bot game, fully ignore "isMyTurn"
+    //  bc the method for moving the bot (makeBotMove) is async, so whenever you run it just make it await
+    //  chessboard.makeBotMove() and it'll be impossible for client to move twice in a row
+    */
     makeMove(fromX, fromY, toX, toY, isMyTurn = true) {
         const piece = this.#chessboard[fromY][fromX];
         this.#lastMove = [fromX, fromY, toX, toY, piece];
@@ -605,7 +616,9 @@ class Chessboard {
 
     // JAKOB this method promotes a pawn at (x,y) to newType ('q','r','b','n'), returns false if invalid
     // and it automically matches the color so dont worry about that, 'newType' can be uppercase or lowercase itll figure it out
-    // every turn you can just check if last rank or first rank is occupied by opposite color pawn, if so prompt the client to choose a type (for now it can be a simple ugly text prompt where they type 'q', 'r', 'b', or 'n') and then call this method with the chosen type
+    // every turn you can just check if last rank or first rank is occupied by opposite color pawn, if so prompt the client to
+    // choose a type (for now it can be a simple ugly text prompt where they type 'q', 'r', 'b', or 'n') and 
+    // then call this method with the chosen type
     promotePawn(x, y, newType) {
         const piece = this.#chessboard[y][x];
         if (!piece || piece.type.toLowerCase() !== 'p') {
@@ -764,6 +777,11 @@ class Chessboard {
         }
     }
 }
+
+
+
+
+export { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King };
 
 
 
