@@ -769,4 +769,3 @@ class Chessboard {
 
 
 module.exports = { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // Makes this a module, allows server to request (I think)
-module.exports = { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // Makes this a module, allows server to request (I think)
