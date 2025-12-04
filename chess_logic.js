@@ -1,5 +1,5 @@
-const { get } = require("http");
-const { parse } = require("path");
+import { get } from "http";
+import { parse } from "path";
 
 // JAKOB BASICALLY IGNORE ALL THE CLASSES THAT ARENT THE Chessboard CLASS YOU NEVER HAVE TO USE THEM OR THEIR METHODS
 class Piece {
@@ -768,4 +768,5 @@ class Chessboard {
 
 
 
-module.exports = { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }; // Makes this a module, allows server to request (I think)
+export { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King };
+
