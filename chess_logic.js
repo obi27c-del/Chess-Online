@@ -781,10 +781,5 @@ class Chessboard {
 
 
 
-export { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King };
-
-
-
-
-export { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King };
+export { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }
 
