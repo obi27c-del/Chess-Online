@@ -299,6 +299,7 @@ class Chessboard {
 
                         // Forward two
                         if (piece.numMoves === 0 &&
+                            this.#inBounds(x, y + direction * 2) &&
                             !this.#chessboard[y + direction * 2][x]) {
                             moves.push([x, y + direction * 2]);
                         }
@@ -384,6 +385,101 @@ class Chessboard {
             }
 
             allMoves.push(row);
+        }
+
+
+        if (!ignoreKingSafety) {
+
+            // Explicitly compute check status without using colors array or object literal.
+            let inCheckWhite = this.isInCheck('w');
+            let inCheckBlack = this.isInCheck('b');
+
+            const inCheck = {};
+            inCheck['w'] = inCheckWhite;
+            inCheck['b'] = inCheckBlack;
+
+            // If neither side is in check, nothing to filter.
+            if (inCheckWhite || inCheckBlack) {
+
+                for (let y = 0; y < 8; y++) {
+                    for (let x = 0; x < 8; x++) {
+
+                        const piece = this.#chessboard[y][x];
+                        const moves = allMoves[y][x];
+                        if (!piece || !moves || moves.length === 0) continue;
+
+                        // Only filter moves for a color currently in check.
+                        if (!inCheck[piece.color]) continue;
+
+                        const filtered = [];
+
+                        for (const mv of moves) {
+                            const [mx, my] = mv;
+
+                            const origFrom = this.#chessboard[y][x];
+                            const origTo = this.#chessboard[my][mx];
+
+                            let castlingRookOrig = null;
+                            let castlingRookPos = null;
+                            let enPassantCaptured = null;
+                            let enPassantPos = null;
+
+                            // Simulate the move
+                            if (origFrom.type.toLowerCase() === 'k' && Math.abs(mx - x) === 2) {
+                                const rookFromX = mx > x ? 7 : 0;
+                                const rookToX = mx > x ? mx - 1 : mx + 1;
+
+                                castlingRookOrig = this.#chessboard[y][rookFromX];
+                                castlingRookPos = { rx: rookFromX, ry: y, tx: rookToX, ty: y };
+
+                                // Move king
+                                this.#chessboard[my][mx] = origFrom;
+                                this.#chessboard[y][x] = null;
+
+                                // Move rook
+                                this.#chessboard[castlingRookPos.ty][castlingRookPos.tx] = castlingRookOrig;
+                                this.#chessboard[castlingRookPos.ry][castlingRookPos.rx] = null;
+                            }
+                            else if (origFrom.type.toLowerCase() === 'p' && x !== mx && !this.#chessboard[my][mx]) {
+                                const direction = origFrom.color === 'w' ? -1 : 1;
+
+                                enPassantPos = { x: mx, y: my - direction };
+                                enPassantCaptured = this.#chessboard[enPassantPos.y][enPassantPos.x];
+
+                                this.#chessboard[my][mx] = origFrom;
+                                this.#chessboard[y][x] = null;
+
+                                this.#chessboard[enPassantPos.y][enPassantPos.x] = null;
+                            }
+                            else {
+                                this.#chessboard[my][mx] = origFrom;
+                                this.#chessboard[y][x] = null;
+                            }
+
+                            const stillInCheck = this.isInCheck(origFrom.color);
+
+                            // Undo simulation
+                            this.#chessboard[y][x] = origFrom;
+                            this.#chessboard[my][mx] = origTo;
+
+                            if (castlingRookPos) {
+                                this.#chessboard[castlingRookPos.ry][castlingRookPos.rx] = castlingRookOrig;
+                                this.#chessboard[castlingRookPos.ty][castlingRookPos.tx] = null;
+                            }
+
+                            if (enPassantPos) {
+                                this.#chessboard[enPassantPos.y][enPassantPos.x] = enPassantCaptured;
+                            }
+
+                            if (!stillInCheck) {
+                                filtered.push(mv);
+                            }
+                        }
+
+                        allMoves[y][x] = filtered;
+                    }
+                }
+            }
         }
 
         return allMoves;
@@ -819,7 +915,10 @@ class Chessboard {
         return t === 'r' || t === 'b' || t === 'q';
     }
 
+
 }
+
+
 
 export { Chessboard, Piece, Pawn, Rook, Knight, Bishop, Queen, King }
 
