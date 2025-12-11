@@ -26,6 +26,7 @@
                 padding: 1rem;
                 border: 2px solid black;
             }
+
             .formTitle{
                 text-align: center;
                 font-size: 28px;
@@ -34,10 +35,16 @@
                 padding: 12px 20px;
                 border-radius: 10px;
                 color: white;
-                margin-bottom: 20px;
+                margin-bottom: 10px;
                 border: 2px solid black
             }
-           .form {
+
+            .linkDisplay {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .form {
                 width: 100%;
                 text-align: center;
             }
@@ -161,6 +168,13 @@
 
                     <div class="formTitle">Design A Game</div>
 
+                    <div class="linkDisplay">
+                        <a href="https://docs.google.com/document/d/1dHf-VMgOL8XPyZBr28fAMSdMGdEoLdd98WkzxseAfQs/edit?usp=sharing" 
+                           target="_blank">
+                           Project Documentation
+                        </a>
+                    </div>
+
                     <div class="group" id="diffOptions">
                         <strong>Bot Difficulty:</strong>
 
@@ -183,10 +197,13 @@
                         <input name="color" id="white" value="white" type="radio"> 
                         <label for="white">White</label>
 
+                        <!-- 
                         <input name="color" id="random" value="random" type="radio"> 
                         <label for="random">Random</label>
+                        -->
                     </div>
 
+                    <!--
                     <div class="group" id="timeOptions">
                         <strong> Time Options: </strong>
 
@@ -199,6 +216,7 @@
                         <input name="time" id="thirty" value="thirty" type="radio"> 
                         <label for="thirty">30:00 minutes</label>
                     </div>
+                    -->
 
                     <button id="submit" type="submit" disabled="disabled">Create Game!</button>
                 </form>
